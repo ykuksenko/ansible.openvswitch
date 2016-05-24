@@ -1,0 +1,22 @@
+[Match]
+Name={{ item.match_name }}
+
+[Link]
+{% if item.link_mtubytes is defined %}MTUBytes={{ item.link_mtubytes }}
+{% endif %}
+
+[Network]
+{% if item.network_dhcp is defined %}DHCP={{ item.network_dhcp }}
+{% endif %}
+{% if item.network_address is defined %}Address={{ item.network_address }}
+{% endif %}
+{% if item.network_gateway is defined %}Gateway={{ item.network_gateway }}
+{% endif %}
+{% if item.network_dns is defined %}{% for ns in item.network_dns %}DNS={{ ns }}
+{% endfor %}{% endif %}
+{% if item.network_domains is defined %}Domains={% for domain in item.network_domains %}{{ domain }} 
+{%- endfor %}{% endif %}
+
+
+[DHCP]
+{% if item.dhcp_usedns is defined %}UseDNS={{ item.dhcp_usedns }}{% endif %}

@@ -1,0 +1,20 @@
+[Match]
+OriginalName={{ item.match_originalname }}
+
+[Link]
+{% if item.macaddresspolicy is defined %}MACAddressPolicy={{ item.macaddresspolicy }}
+{% endif %}
+{% if item.namepolicy is defined %}NamePolicy={{ item.namepolicy }}{% else %}NamePolicy=kernel database onboard slot path{% endif %}
+
+{% if item.macaddress is defined %}MACAddress={{ item.macaddress }}
+{% endif %}
+{% if item.name is defined %}Name={{ item.name }}
+{% endif %}
+{% if item.mtubytes is defined %}MTUBytes={{ item.mtubytes }}
+{% endif %}
+{% if item.bitspersecond is defined %}BitsPerSecond={{ item.bitspersecond }}
+{% endif %}
+{% if item.duplex is defined %}Duplex={{ item.duplex }}
+{% endif %}
+{% if item.wakeonlan is defined %}WakeOnLan={{ item.wakeonlan }}
+{% endif %}

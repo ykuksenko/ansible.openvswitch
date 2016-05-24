@@ -1,0 +1,10 @@
+galaxy_info:
+  author: Yevgeniy Kuksenko
+  description: openvswitch role
+  license: GPLv3
+  min_ansible_version: 2.0
+  galaxy_tags:
+    - openvswitch
+    - systemd
+    - system
+dependencies: []

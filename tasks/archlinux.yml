@@ -1,0 +1,74 @@
+- name: install openvswitch
+  pacman: name=openvswitch state=latest
+  
+- name: enable and start ovsdb-server
+  service: name=ovsdb-server state=started enabled=yes
+
+- name: enable and start ovs-vswitchd
+  service: name=ovs-vswitchd state=started enabled=yes
+
+- name: configure openvswitch bridge {{ openvswitch_bridge_name }}
+  openvswitch_bridge: bridge={{ openvswitch_bridge_name }} state=present
+  notify: restart systemd-networkd
+
+- name: configure openvswitch access port {{ openvswitch_access_port_name }}
+  openvswitch_port: bridge={{ openvswitch_bridge_name }} port={{ openvswitch_access_port_name }} set='interface {{ openvswitch_access_port_name }} type=internal'
+  notify: restart systemd-networkd
+
+- name: configure openvswitch access port vlan
+  openvswitch_port: bridge={{ openvswitch_bridge_name }} port={{ openvswitch_access_port_name }} set='port {{ openvswitch_access_port_name }} tag={{ openvswitch_access_port_vlan }}'
+  notify: restart systemd-networkd
+
+- name: configure openvswitch physical port {{ openvswitch_physical_port_name }}
+  openvswitch_port: bridge={{ openvswitch_bridge_name }} port={{ item }}
+  with_items:
+    - "{{ openvswitch_physical_port_name }}"
+  notify: restart systemd-networkd
+
+- name: configure systemd link units
+  template: src=systemd-networkd.link.j2 dest=/etc/systemd/network/{{ item.priority }}-{{ item.match_originalname }}.link
+  with_items:
+    - "{{ openvswitch_systemd_links }}"
+  notify: restart systemd-networkd
+
+- name: configure systemd network units
+  template: src=systemd-networkd.network.j2 dest=/etc/systemd/network/{{ item.priority }}-{{ item.match_name }}.network
+  with_items:
+    - "{{ openvswitch_systemd_networks }}"
+  notify: restart systemd-networkd
+
+- name: systemd workaround - enable links service install
+  template: src=systemd-link-up.service.j2 dest=/etc/systemd/system/systemd-link-up-{{ item }}.service
+  with_items:
+    - "{{ openvswitch_physical_port_name }}"
+  register: systemdworkaround
+
+- name: reload systemd daemon to notice new configs
+  command: /usr/bin/systemctl daemon-reload
+  when: systemdworkaround|changed
+
+- name: enable and start link workarounds
+  service: name=systemd-link-up-{{ item }}.service state=started enabled=yes
+  with_items:
+    - "{{ openvswitch_physical_port_name }}"
+
+- name: enable networkd service
+  service: name=systemd-networkd enabled=yes
+  register: networkdenabled
+
+- name: reboot computer
+  command: 'shutdown -r 1 "system about to reboot, please log out"'
+  ignore_errors: yes
+  async: 0
+  poll: 0
+  when: networkdenabled.changed
+
+- name: wait for ssh port to come down
+  local_action: wait_for port=22 host="{{ ansible_host }}" state=stopped
+  sudo: no
+  when: networkdenabled.changed
+
+- name: wait for ssh port to come back up
+  local_action: wait_for port=22 host="{{ ansible_host }}" state=started
+  sudo: no
+  when: networkdenabled.changed

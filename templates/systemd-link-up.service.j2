@@ -1,0 +1,12 @@
+[Unit]
+Description=missing feature workaround for systemd. bring up link for {{ item }}
+After=network.target ovs-vswitchd.service
+Wants=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ip link set {{ item }} up
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
